@@ -13,9 +13,14 @@ public class ClienteSocketStream {
 
             Socket clientSocket = new Socket();
 
-            System.out.println("Estableciendo la conexión");
+            // Configura el cliente para conectar a la IP real de la VM y ese puerto.
+            String ipVm = "192.168.0.21";
+			int puerto = 6666;
+            
+			// Añade logs de IP/puerto y del cliente remoto.
+			System.out.println("Estableciendo la conexión con " + ipVm + ":" + puerto);
 
-            InetSocketAddress addr = new InetSocketAddress("localhost", 5555);
+            InetSocketAddress addr = new InetSocketAddress(ipVm, puerto);
             clientSocket.connect(addr);
 
             InputStream is = clientSocket.getInputStream();

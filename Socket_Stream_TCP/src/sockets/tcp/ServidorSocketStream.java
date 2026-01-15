@@ -17,7 +17,7 @@ public class ServidorSocketStream {
 
             System.out.println("Realizando el bind");
 
-            InetSocketAddress addr = new InetSocketAddress("localhost", 5555);
+            InetSocketAddress addr = new InetSocketAddress("0.0.0.0", 5555);
             serverSocket.bind(addr);
 
             System.out.println("Aceptando conexiones");
@@ -25,6 +25,7 @@ public class ServidorSocketStream {
             Socket newSocket = serverSocket.accept();
 
             System.out.println("Conexión recibida");
+            System.out.println("Cliente conectado desde: " + newSocket.getRemoteSocketAddress());
 
             InputStream is = newSocket.getInputStream();
             OutputStream os = newSocket.getOutputStream();
