@@ -31,6 +31,6 @@ _**Ejercicio 1: VM (Servidor) ↔ Host (Cliente)**_
      
   2. **Ejecución con éxito**
 
-    ![Ejecución](imgs/ejecucion.png)
+     ![Ejecucion](imgs/ejecucion.png)
 
      
