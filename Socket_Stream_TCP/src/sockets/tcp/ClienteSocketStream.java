@@ -15,7 +15,7 @@ public class ClienteSocketStream {
 
             // Configura el cliente para conectar a la IP real de la VM y ese puerto.
             String ipVm = "192.168.0.21";
-			int puerto = 6666;
+			int puerto = 5555;
             
 			// Añade logs de IP/puerto y del cliente remoto.
 			System.out.println("Estableciendo la conexión con " + ipVm + ":" + puerto);
@@ -23,12 +23,15 @@ public class ClienteSocketStream {
             InetSocketAddress addr = new InetSocketAddress(ipVm, puerto);
             clientSocket.connect(addr);
 
+            System.out.println("Conectado con éxito al servidor");
+            
             InputStream is = clientSocket.getInputStream();
             OutputStream os = clientSocket.getOutputStream();
 
             System.out.println("Enviando mensaje");
+            
 
-            String mensaje = "mensaje desde el cliente";
+            String mensaje = "mensaje desde el cliente ejercicio1";
             os.write(mensaje.getBytes());
 
             System.out.println("Mensaje enviado");
