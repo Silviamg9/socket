@@ -27,10 +27,10 @@ _**Ejercicio 1: VM (Servidor) ↔ Host (Cliente)**_
 
   1. **Prueba de conectividad (Ping)**
 
-     ![Ping](imgs/Prueba-de-conectividad-Ping.png)
+     ![Ping](imgs/ping.png)
      
   2. **Ejecución con éxito**
 
-    ![Ejecución](imgs/Ejecucion.png)
+    ![Ejecución](imgs/ejecucion.png)
 
      
