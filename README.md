@@ -29,6 +29,10 @@ _**Ejercicio 1: VM (Servidor) ↔ Host (Cliente)**_
 
     - Se realizó un ping desde el Host a la VM para verificar que había conexión antes de ejecutar Java.
 
-      
+      ![Captura del Ping](imgs/Prueba-de-conectividad-Ping.png)
      
   2. **Ejecución con éxito**
+
+   - Captura donde se ve el mensaje recibido en el servidor Linux enviado desde el ordenador real.
+
+     
