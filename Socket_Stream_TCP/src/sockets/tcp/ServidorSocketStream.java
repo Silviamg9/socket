@@ -10,40 +10,40 @@ import java.net.ServerSocket;
 public class ServidorSocketStream {
 
     public static void main(String[] args) {
-        try {
-            System.out.println("Creando socket servidor");
+    	System.out.println("Creando socket servidor");
+		try (ServerSocket serverSocket = new ServerSocket()) {
+			
+			System.out.println("Realizando el bind");
+			// Escuchamos en 0.0.0.0 para aceptar conexiones de cualquier IP
+			InetSocketAddress addr = new InetSocketAddress("0.0.0.0", 5555);
+			serverSocket.bind(addr);
 
-            ServerSocket serverSocket = new ServerSocket();
+			System.out.println("Servidor escuchando en IP: 0.0.0.0 Puerto: 5555");
 
-            System.out.println("Realizando el bind");
+			// Aceptamos la conexión del cliente
+			try (Socket newSocket = serverSocket.accept()) {
+				System.out.println("Conexión recibida desde: " + newSocket.getRemoteSocketAddress());
 
-            InetSocketAddress addr = new InetSocketAddress("localhost", 5555);
-            serverSocket.bind(addr);
+				InputStream is = newSocket.getInputStream();
+				
+				// Definimos un buffer de 25 bytes
+				byte[] buffer = new byte[25];
+				
+				int bytesLeidos = is.read(buffer);
 
-            System.out.println("Aceptando conexiones");
+				if (bytesLeidos != -1) {
+					String mensajeLimpio = new String(buffer, 0, bytesLeidos);
+					System.out.println("Mensaje recibido: " + mensajeLimpio);
+				}
 
-            Socket newSocket = serverSocket.accept();
-
-            System.out.println("Conexión recibida");
-
-            InputStream is = newSocket.getInputStream();
-            OutputStream os = newSocket.getOutputStream();
-
-            byte[] mensaje = new byte[25];
-            is.read(mensaje);
-
-            System.out.println("Mensaje recibido: " + new String(mensaje));
-
-            System.out.println("Cerrando el nuevo socket");
-            newSocket.close();
-
-            System.out.println("Cerrando el socket servidor");
-            serverSocket.close();
-
-            System.out.println("Terminado");
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+				System.out.println("Cerrando el nuevo socket");
+			}
+			
+			System.out.println("Cerrando el socket servidor");
+			System.out.println("Terminado");
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
 }

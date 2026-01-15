@@ -8,33 +8,26 @@ import java.net.Socket;
 public class ClienteSocketStream {
 
     public static void main(String[] args) {
-        try {
-            System.out.println("Creando socket cliente");
+    	System.out.println("Creando socket cliente");
+		try (Socket clientSocket = new Socket()) {
+			
+			System.out.println("Estableciendo la conexión");
+			// IP de tu VM Linux
+			InetSocketAddress addr = new InetSocketAddress("192.168.0.21", 5555);
+			clientSocket.connect(addr);
 
-            Socket clientSocket = new Socket();
+			OutputStream os = clientSocket.getOutputStream();
+			
+			System.out.println("Enviando mensaje");
+			String mensaje = "mensaje desde el cliente ejercicio 2";
+			os.write(mensaje.getBytes());
 
-            System.out.println("Estableciendo la conexión");
-
-            InetSocketAddress addr = new InetSocketAddress("localhost", 5555);
-            clientSocket.connect(addr);
-
-            InputStream is = clientSocket.getInputStream();
-            OutputStream os = clientSocket.getOutputStream();
-
-            System.out.println("Enviando mensaje");
-
-            String mensaje = "mensaje desde el cliente";
-            os.write(mensaje.getBytes());
-
-            System.out.println("Mensaje enviado");
-
-            System.out.println("Cerrando el socket cliente");
-            clientSocket.close();
-
-            System.out.println("Terminado");
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+			System.out.println("Mensaje enviado");
+			System.out.println("Cerrando el socket cliente");
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.out.println("Terminado");
     }
 }
