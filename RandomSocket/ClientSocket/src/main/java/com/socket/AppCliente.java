@@ -11,8 +11,9 @@ import java.rmi.UnknownHostException;
  * Hello world!
  *
  */
-public class AppCliente 
-{
+public class AppCliente {
+	
+	static final String IP_SERVER = "192.168.0.21";
 	static final int  PORT = 7777;
 	
     public static void main( String[] args )
@@ -20,7 +21,7 @@ public class AppCliente
     	
         try {
         	//conectamos con el servidor
-        	Socket socket = new Socket("localhost",PORT);
+        	Socket socket = new Socket(IP_SERVER,PORT);
         	
         	//Para enviar datos al server
         	PrintWriter salida = new PrintWriter(socket.getOutputStream(), true);
@@ -38,8 +39,16 @@ public class AppCliente
         	while((datoRec = entradaSocket.readLine()) != null){
         		//Mostrar el dato recibido por consola
         		System.out.println(datoRec);
-        		// Leer la consola y enviar al server
-        		salida.println(entradaConsola.readLine());
+        		
+        		// MEJORA 3: El cliente se cierra automáticamente al ganar
+                if (datoRec.contains("GANASTE")) {
+                    System.out.println("<Cliente> ¡Felicidades! Saliendo del programa...");
+                    break;
+                }
+        		
+                System.out.print("<Cliente> Introduce un número: ");
+                String numeroParaEnviar = entradaConsola.readLine();
+                salida.println(numeroParaEnviar); // Enviamos lo que acabamos de leer
         	}
         	
         	

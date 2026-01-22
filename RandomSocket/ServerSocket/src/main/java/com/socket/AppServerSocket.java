@@ -17,8 +17,11 @@ public class AppServerSocket
 {
 	private final static int PORT = 7777;
 	private static int numGen;
-    public static void main( String[] args ) 
-    {
+	private static int intentos = 0; // MEJORA 1: Variable para contar intentos
+	
+	
+    public static void main( String[] args ) {
+    	
     	//Generar número
     	numGen = (new Random()).nextInt(10)+1;
     	
@@ -36,6 +39,8 @@ public class AppServerSocket
     		//Para recibir datos al cliente <<<
     		BufferedReader entrada = new BufferedReader(new InputStreamReader(client.getInputStream()));
     	
+    		// MEJORA 2: Mensaje de bienvenida al conectar
+            salida.println("<Server> ¡Bienvenido al Juego del Número Secreto! Intenta adivinar del 1 al 10.");
     		
     		String datoRec, datoEnv;
     		
@@ -65,18 +70,17 @@ public class AppServerSocket
 			System.out.println("IP:" + clientIP + ", HostName: "+ hostName);
 	}
 	private static String checkNumero(String datoRec) {
-		try {
-			int numero = Integer.parseInt(datoRec);
-			
-			if(numero > numGen) {
-				return "<server>El número es mayor que el número mágico";
-			}else if(numero < numGen) {
-				return "<server>El número es menor que el número mágico";
-			}else {
-				return "<server>Ha adivinado el número";
-			}
-			
-			
+		
+		intentos++; // Incrementamos el contador en cada intento
+        try {
+            int numero = Integer.parseInt(datoRec);
+            if (numero > numGen) {
+                return "<Server> El número buscado es MENOR. (Intentos: " + intentos + ")";
+            } else if (numero < numGen) {
+                return "<Server> El número buscado es MAYOR. (Intentos: " + intentos + ")";
+            } else {
+                return "<Server> ¡GANASTE! Lo lograste en " + intentos + " intentos.";
+            }
 		}catch(NumberFormatException e) {
 			return "<Server>Por favor, introduzca un número";
 		}
