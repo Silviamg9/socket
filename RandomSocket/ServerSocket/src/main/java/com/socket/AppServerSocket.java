@@ -17,6 +17,7 @@ public class AppServerSocket
 {
 	private final static int PORT = 7777;
 	private static int numGen;
+	private static int intentos = 0; // MEJORA 2: Variable para contar intentos
 	
 	
     public static void main( String[] args ) {
@@ -42,18 +43,20 @@ public class AppServerSocket
             // Se envía este mensaje al cliente inmediatamente tras el accept()
             salida.println("<Server> ¡Bienvenido al Juego del Número Secreto! Intenta adivinar del 1 al 10.");
     		
-    		String datoRec, datoEnv;
+    		String datoRec;
     		
     		//leeremos todos los mensajes recibidos
     		//comprobamos si es el número mágico
-    		while((datoRec = entrada.readLine())!= null) {
-  
-    			datoEnv = checkNumero(datoRec);
-    			
-    			//Retornamos al cliente el resultado 
-    			//de la comprobación
-    			salida.println(datoEnv);
-    		}
+    		while ((datoRec = entrada.readLine()) != null) {
+                // MEJORA 2: Se procesa el número y se devuelven los intentos
+                String respuesta = checkNumero(datoRec);
+                salida.println(respuesta);
+                
+                if (respuesta.contains("GANASTE")) break; 
+            }
+
+            client.close();
+            srvSock.close();
     		
     	}catch(IOException e) {
     		System.err.println("Problemas en el socket");
@@ -71,11 +74,17 @@ public class AppServerSocket
 	}
 	private static String checkNumero(String datoRec) {
 		
+		intentos++; // Incrementamos el contador en cada recepción
+		
 		try {
-            int numero = Integer.parseInt(datoRec);
-            if (numero > numGen) return "<Server> El número buscado es MENOR";
-            else if (numero < numGen) return "<Server> El número buscado es MAYOR";
-            else return "<Server> Ha adivinado el número";
+            int numero = Integer.parseInt(datoRec.trim());
+            if (numero > numGen) {
+                return "<Server> El número es MENOR. (Intentos: " + intentos + ")";
+            } else if (numero < numGen) {
+                return "<Server> El número es MAYOR. (Intentos: " + intentos + ")";
+            } else {
+                return "<Server> ¡GANASTE! Lo lograste en " + intentos + " intentos.";
+            }
         } catch (NumberFormatException e) {
             return "<Server> Por favor, introduzca un número";
         }
