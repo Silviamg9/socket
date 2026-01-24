@@ -52,8 +52,12 @@ public class AppServerSocket
                 String respuesta = checkNumero(datoRec);
                 salida.println(respuesta);
                 
-                if (respuesta.contains("GANASTE")) break; 
-            }
+             // MEJORA 3: Cierre automático al ganar
+                if (respuesta.contains("GANASTE")) {
+                    System.out.println("<Server> Partida finalizada. Cerrando socket...");
+                    break; 
+                }
+    		}
 
             client.close();
             srvSock.close();
