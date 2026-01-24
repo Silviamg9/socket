@@ -13,7 +13,7 @@ import java.rmi.UnknownHostException;
  */
 public class AppCliente {
 	
-	static final String IP_SERVER = "172.21.76.59";
+	static final String IP_SERVER = "192.168.0.21";
 	static final int  PORT = 7777;
 	
     public static void main( String[] args )
