@@ -12,98 +12,52 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Servidor TCP monohilo (single-thread) que atiende peticiones de forma secuencial.
- *
- * Idea clave:
- * - Acepta una conexión (accept)
- * - Procesa la petición completa
- * - Cierra la conexión
- * - Vuelve a aceptar otra
- *
- * Esto es intencionalmente simple (didáctico). En un servidor real:
- * - se usaría pool de hilos (ExecutorService) o I/O no bloqueante (NIO)
- * - se manejarían timeouts, parsing HTTP, cabeceras correctas, etc.
+ * Servidor TCP que atiende clientes mediante un hilo por conexión.
+ * Sirve HTML básico y un favicon desde src/main/resources/favicon.ico
  */
 public class HiloPorClienteServidor implements Runnable {
 
-    /**
-     * Puerto donde escucha el servidor.
-     * Nota: "protected" permite herencia, pero en un proyecto real suele ser "private final".
-     */
+    /** Puerto donde escucha el servidor. */
     protected int serverPort = 9001;
 
-    /**
-     * ServerSocket: socket que permanece escuchando conexiones entrantes.
-     * Se inicializa en openServerSocket().
-     */
+    /** Socket servidor. */
     protected ServerSocket serversocket = null;
 
-    /**
-     * Flag de parada.
-     * IMPORTANTE: al ser leído/escrito desde hilos distintos, lo ideal es hacerlo "volatile"
-     * o acceder a él siempre sincronizado para garantizar visibilidad.
-     */
+    /** Flag de parada. */
     protected boolean isStopped;
 
-    /**
-     * Referencia al hilo que está ejecutando run().
-     * Útil para depuración / logging / diagnósticos.
-     */
+    /** Referencia al hilo que ejecuta run(). */
     protected Thread runningThread = null;
 
     public HiloPorClienteServidor(int serverPort) {
         this.serverPort = serverPort;
     }
 
-    /**
-     * Punto de entrada del hilo del servidor.
-     *
-     * Flujo:
-     * 1) Guardar el hilo actual (para debug)
-     * 2) Abrir el ServerSocket
-     * 3) Bucle: accept() -> processClientRequest() hasta stop()
-     *
-     * accept() es BLOQUEANTE: el hilo se queda esperando hasta que llegue un cliente.
-     */
     @Override
     public void run() {
-        // Guardamos el hilo que ejecuta el servidor (no imprescindible, pero útil).
         synchronized (this) {
             this.runningThread = Thread.currentThread();
         }
 
-        // Abre el puerto y empieza a escuchar.
         openServerSocket();
 
-        // Bucle principal del servidor.
         while (!isStopped()) {
             try {
-                // Espera un cliente. Devuelve un Socket (conexión) cuando alguien conecta.
                 Socket clientSocket = this.serversocket.accept();
 
-                // Procesa la petición en ESTE MISMO hilo.
-                // Por eso este servidor es "single-thread": hasta que no termina,
-                // no atiende a otro cliente.
-                //processClientRequest(clientSocket);
-                
                 new Thread(() -> {
                     try {
                         processClientRequest(clientSocket);
-                    
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }, "client-" + clientSocket.getPort()).start();
 
             } catch (IOException e) {
-                // Caso típico: cuando llamas a stop(), cierras el ServerSocket.
-                // Eso hace que accept() lance IOException y salgamos limpiamente.
                 if (isStopped()) {
                     System.out.println("Server stopped.");
                     return;
                 }
-
-                // Si no está parado, el fallo es real (puerto roto, error de red, etc.)
                 throw new RuntimeException("Error accepting client connection", e);
             }
         }
@@ -115,88 +69,103 @@ public class HiloPorClienteServidor implements Runnable {
      * Procesa la conexión de un cliente.
      */
     private void processClientRequest(Socket clientSocket) throws IOException {
-    	 try (clientSocket;
-    	         InputStream in = clientSocket.getInputStream();
-    	         BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.US_ASCII));
-    	         OutputStream out = clientSocket.getOutputStream()) {
+        try (clientSocket;
+             InputStream in = clientSocket.getInputStream();
+             BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.US_ASCII));
+             OutputStream out = clientSocket.getOutputStream()) {
 
-    	        // 1) Leer la primera línea: "GET /ruta HTTP/1.1"
-    	        String requestLine = br.readLine(); // puede ser null si el cliente corta
-    	        if (requestLine == null || requestLine.isBlank()) return;
+            // 1) Leer la primera línea: "GET /ruta HTTP/1.1"
+            String requestLine = br.readLine();
+            if (requestLine == null || requestLine.isBlank()) return;
 
-    	        String path = "/";
-    	        if (requestLine.startsWith("GET ")) {
-    	            int start = 4;
-    	            int end = requestLine.indexOf(' ', start);
-    	            if (end > start) path = requestLine.substring(start, end);
-    	        }
+            String path = "/";
+            if (requestLine.startsWith("GET ")) {
+                int start = 4;
+                int end = requestLine.indexOf(' ', start);
+                if (end > start) path = requestLine.substring(start, end);
+            }
 
-    	        // 2) Favicon: responder rápido y salir
-    	        boolean isFavicon = path.equals("/favicon.ico");
-    	        if (isFavicon) {
-    	            String headers =
-    	                    "HTTP/1.1 204 No Content\r\n" +
-    	                    "Connection: close\r\n" +
-    	                    "\r\n";
-    	            out.write(headers.getBytes(StandardCharsets.US_ASCII));
-    	            out.flush();
-    	            return;
-    	        }
+            // 2) Favicon: servir el fichero real desde resources y salir
+            if ("/favicon.ico".equals(path)) {
+                serveFavicon(out);
+                return;
+            }
 
-    	        // 3) Datos del cliente
-    	        String clientIp = clientSocket.getInetAddress().getHostAddress();
-    	        int clientPort = clientSocket.getPort(); // puerto remoto del cliente
-    	        String remote = clientSocket.getRemoteSocketAddress().toString(); // /IP:PUERTO
+            // 3) Datos del cliente
+            String clientIp = clientSocket.getInetAddress().getHostAddress();
+            int clientPort = clientSocket.getPort(); // puerto remoto del cliente
+            String remote = clientSocket.getRemoteSocketAddress().toString(); // /IP:PUERTO
 
-    	        long time = System.currentTimeMillis();
-    	        String fecha = new SimpleDateFormat("dd/MM/yy HH:mm:ss").format(new Date(time));
+            long time = System.currentTimeMillis();
+            String fecha = new SimpleDateFormat("dd/MM/yy HH:mm:ss").format(new Date(time));
 
-    	        String body = "<html><body style='background-color: coral;'>"
-    	                + "<h3>Servidor OK</h3>"
-    	                + "<p>Path: " + path + "</p>"
-    	                + "<p>Server: " + fecha + "</p>"
-    	                + "<p>Hilo: " + Thread.currentThread().getName() + "</p>"
-    	                + "<p>Cliente IP: " + clientIp + "</p>"
-    	                + "<p>Cliente puerto: " + clientPort + "</p>"
-    	                + "<p>Remote: " + remote + "</p>"
-    	                + "</body></html>";
+            String body = "<html>"
+                    + "<head>"
+                    + "<link rel='icon' href='/favicon.ico'>"
+                    + "<title>Programación de Servicios y Procesos</title>"
+                    + "</head>"
+                    + "<body style='background-color: coral;'>"
+                    + "<h3 style='color:blue;'>Servidor OK</h3>"
+                    + "<p>Path: " + path + "</p>"
+                    + "<p>Server: " + fecha + "</p>"
+                    + "<p>Hilo: " + Thread.currentThread().getName() + "</p>"
+                    + "<p>Cliente IP: " + clientIp + "</p>"
+                    + "<p>Cliente puerto: " + clientPort + "</p>"
+                    + "<p>Remote: " + remote + "</p>"
+                    + "</body></html>";
 
-    	        byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
+            byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
 
-    	        String headers =
-    	                "HTTP/1.1 200 OK\r\n" +
-    	                "Content-Type: text/html; charset=UTF-8\r\n" +
-    	                "Content-Length: " + bodyBytes.length + "\r\n" +
-    	                "Connection: close\r\n" +
-    	                "\r\n";
+            String headers =
+                    "HTTP/1.1 200 OK\r\n" +
+                    "Content-Type: text/html; charset=UTF-8\r\n" +
+                    "Content-Length: " + bodyBytes.length + "\r\n" +
+                    "Connection: close\r\n" +
+                    "\r\n";
 
-    	        out.write(headers.getBytes(StandardCharsets.US_ASCII));
-    	        out.write(bodyBytes);
-    	        out.flush();
+            out.write(headers.getBytes(StandardCharsets.US_ASCII));
+            out.write(bodyBytes);
+            out.flush();
 
-    	        System.out.println("[" + Thread.currentThread().getName() + "] " + requestLine);
-    	        System.out.println("[" + Thread.currentThread().getName() + "] Cliente: " + remote);
-    	        System.out.println("[" + Thread.currentThread().getName() + "] Petición procesada: " + fecha);
-    	    }
+            // Log: ignorar favicon (ya se devuelve arriba) y registrar petición normal
+            System.out.println("[" + Thread.currentThread().getName() + "] " + requestLine);
+            System.out.println("[" + Thread.currentThread().getName() + "] Cliente: " + remote);
+            System.out.println("[" + Thread.currentThread().getName() + "] Petición procesada: " + fecha);
+        }
     }
 
-
     /**
-     * Devuelve si el servidor está parado.
-     * synchronized fuerza visibilidad y orden entre hilos
-     *
+     * Sirve el favicon real desde el classpath: src/main/resources/favicon.ico
      */
+    private void serveFavicon(OutputStream out) throws IOException {
+        try (InputStream iconStream = HiloPorClienteServidor.class.getResourceAsStream("/favicon.ico")) {
+
+            if (iconStream == null) {
+                out.write(("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n")
+                        .getBytes(StandardCharsets.US_ASCII));
+                out.flush();
+                return;
+            }
+
+            byte[] iconBytes = iconStream.readAllBytes();
+
+            String headers =
+                    "HTTP/1.1 200 OK\r\n" +
+                    "Content-Type: image/x-icon\r\n" +
+                    "Content-Length: " + iconBytes.length + "\r\n" +
+                    "Connection: close\r\n" +
+                    "\r\n";
+
+            out.write(headers.getBytes(StandardCharsets.US_ASCII));
+            out.write(iconBytes);
+            out.flush();
+        }
+    }
+
     private synchronized boolean isStopped() {
         return isStopped;
     }
 
-    /**
-     * Abre el ServerSocket en el puerto configurado.
-     * Si el puerto está ocupado, se lanza excepción.
-     *
-     * Recomendación: incluir la IOException original en el RuntimeException
-     * para tener trazas completas.
-     */
     private void openServerSocket() {
         try {
             this.serversocket = new ServerSocket(this.serverPort);
@@ -205,22 +174,9 @@ public class HiloPorClienteServidor implements Runnable {
         }
     }
 
-    /**
-     * Detiene el servidor.
-     *
-     * Estrategia:
-     * - Marca el flag de parada
-     * - Cierra el ServerSocket para desbloquear accept()
-     *
-     * La sincronización aquí ayuda, pero para consistencia total se recomienda:
-     * - isStopped como volatile
-     * - y/o isStopped() también synchronized
-     */
     public synchronized void stop() {
         this.isStopped = true;
-
         try {
-            // Cerrar el ServerSocket es clave: hace que accept() salga con IOException.
             if (this.serversocket != null) {
                 this.serversocket.close();
             }
