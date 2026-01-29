@@ -115,52 +115,69 @@ public class HiloPorClienteServidor implements Runnable {
      * Procesa la conexión de un cliente.
      */
     private void processClientRequest(Socket clientSocket) throws IOException {
-        try (clientSocket;
-             InputStream in = clientSocket.getInputStream();
-             BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.US_ASCII));
-             OutputStream out = clientSocket.getOutputStream()) {
+    	 try (clientSocket;
+    	         InputStream in = clientSocket.getInputStream();
+    	         BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.US_ASCII));
+    	         OutputStream out = clientSocket.getOutputStream()) {
 
-            // 1) Leer la primera línea: "GET /ruta HTTP/1.1"
-            String requestLine = br.readLine(); // puede ser null si el cliente corta
-            String path = "/";
+    	        // 1) Leer la primera línea: "GET /ruta HTTP/1.1"
+    	        String requestLine = br.readLine(); // puede ser null si el cliente corta
+    	        if (requestLine == null || requestLine.isBlank()) return;
 
-            if (requestLine != null && requestLine.startsWith("GET ")) {
-                // Extrae lo que hay entre "GET " y el siguiente espacio
-                int start = 4;
-                int end = requestLine.indexOf(' ', start);
-                if (end > start) path = requestLine.substring(start, end);
-            }
+    	        String path = "/";
+    	        if (requestLine.startsWith("GET ")) {
+    	            int start = 4;
+    	            int end = requestLine.indexOf(' ', start);
+    	            if (end > start) path = requestLine.substring(start, end);
+    	        }
 
-            // (Opcional) Evitar “doble log” por favicon
-            boolean isFavicon = path.equals("/favicon.ico");
+    	        // 2) Favicon: responder rápido y salir
+    	        boolean isFavicon = path.equals("/favicon.ico");
+    	        if (isFavicon) {
+    	            String headers =
+    	                    "HTTP/1.1 204 No Content\r\n" +
+    	                    "Connection: close\r\n" +
+    	                    "\r\n";
+    	            out.write(headers.getBytes(StandardCharsets.US_ASCII));
+    	            out.flush();
+    	            return;
+    	        }
 
-            long time = System.currentTimeMillis();
-            String fecha = new SimpleDateFormat("dd/MM/yy HH:mm:ss").format(new Date(time));
+    	        // 3) Datos del cliente
+    	        String clientIp = clientSocket.getInetAddress().getHostAddress();
+    	        int clientPort = clientSocket.getPort(); // puerto remoto del cliente
+    	        String remote = clientSocket.getRemoteSocketAddress().toString(); // /IP:PUERTO
 
-            String body = "<html><body style='background-color: coral;'>"
-                    + "<h3>Servidor OK</h3>"
-                    + "<p>Path: " + path + "</p>"
-                    + "<p>Server: " + fecha + "</p>"
-                    + "</body></html>";
+    	        long time = System.currentTimeMillis();
+    	        String fecha = new SimpleDateFormat("dd/MM/yy HH:mm:ss").format(new Date(time));
 
-            byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
+    	        String body = "<html><body style='background-color: coral;'>"
+    	                + "<h3>Servidor OK</h3>"
+    	                + "<p>Path: " + path + "</p>"
+    	                + "<p>Server: " + fecha + "</p>"
+    	                + "<p>Hilo: " + Thread.currentThread().getName() + "</p>"
+    	                + "<p>Cliente IP: " + clientIp + "</p>"
+    	                + "<p>Cliente puerto: " + clientPort + "</p>"
+    	                + "<p>Remote: " + remote + "</p>"
+    	                + "</body></html>";
 
-            String headers =
-                    "HTTP/1.1 200 OK\r\n" +
-                    "Content-Type: text/html; charset=UTF-8\r\n" +
-                    "Content-Length: " + bodyBytes.length + "\r\n" +
-                    "Connection: close\r\n" +
-                    "\r\n";
+    	        byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
 
-            out.write(headers.getBytes(StandardCharsets.US_ASCII));
-            out.write(bodyBytes);
-            out.flush();
+    	        String headers =
+    	                "HTTP/1.1 200 OK\r\n" +
+    	                "Content-Type: text/html; charset=UTF-8\r\n" +
+    	                "Content-Length: " + bodyBytes.length + "\r\n" +
+    	                "Connection: close\r\n" +
+    	                "\r\n";
 
-            if (!isFavicon) {
-                System.out.println("[" + Thread.currentThread().getName() + "] " + requestLine);
-                System.out.println("[" + Thread.currentThread().getName() + "] Petición procesada: " + fecha);
-            }
-        }
+    	        out.write(headers.getBytes(StandardCharsets.US_ASCII));
+    	        out.write(bodyBytes);
+    	        out.flush();
+
+    	        System.out.println("[" + Thread.currentThread().getName() + "] " + requestLine);
+    	        System.out.println("[" + Thread.currentThread().getName() + "] Cliente: " + remote);
+    	        System.out.println("[" + Thread.currentThread().getName() + "] Petición procesada: " + fecha);
+    	    }
     }
 
 

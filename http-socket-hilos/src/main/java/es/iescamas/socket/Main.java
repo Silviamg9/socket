@@ -1,8 +1,8 @@
 package es.iescamas.socket;
 /**
- * ##########################################
- * # CREA EL SERVIDOR: SingleThreadedServer #
- * ##########################################
+ * ############################################
+ * # CREA EL SERVIDOR: HiloPorClienteServidor #
+ * ############################################
  */
 public class Main {
 		
