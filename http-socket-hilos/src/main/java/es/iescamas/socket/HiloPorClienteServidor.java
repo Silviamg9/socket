@@ -104,6 +104,7 @@ public class HiloPorClienteServidor implements Runnable {
                         + "<ul>"
                         + "<li><a href='/nombre/Ana' style='color:#3498db;'>Saludar a Ana</a></li>"
                         + "<li><a href='/nombre/Pepe' style='color:#3498db;'>Saludar a Pepe</a></li>"
+                        + "<li><a href='/nombre/Lucia' style='color:#3498db;'>Saludar a Lucia</a></li>"
                         + "</ul>";
             } else if (path.startsWith("/nombre/")) {
                 // Mejora 1: Ruta dinámica
