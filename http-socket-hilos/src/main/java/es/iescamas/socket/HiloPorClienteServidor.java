@@ -92,11 +92,25 @@ public class HiloPorClienteServidor implements Runnable {
                 return;
             }
 
-            // --- MEJORA 1: Lógica para ruta dinámica ---
-            String mensajeSaludo = "Bienvenido al Servidor";
+            // --- LÓGICA DE MEJORAS 1 Y 2 ---
+            String mensajeSaludo = "Panel de Control del Servidor";
+            String contenidoExtra = "";
+
             if (path.startsWith("/nombre/")) {
-                // Extraemos el texto que viene después de /nombre/
-                mensajeSaludo = "Hola " + path.substring(8); 
+                // Mejora 1: Ruta dinámica
+                mensajeSaludo = "Hola " + path.substring(8);
+                contenidoExtra = "<p style='font-size: 1.2em;'>Has accedido a través de una ruta dinámica.</p>"
+                               + "<a href='/' style='color:#3498db; text-decoration:none;'>← Volver al inicio</a>";
+            } else if (path.equals("/")) {
+                // Mejora 2: Página de inicio con navegación (Mejora libre)
+                mensajeSaludo = "Bienvenido al Servidor Concurrente";
+                contenidoExtra = "<h3>Pruebas de Concurrencia Real:</h3>"
+                        + "<p>Haz clic en estos enlaces para abrir hilos distintos:</p>"
+                        + "<ul style='list-style: none; padding: 0;'>"
+                        + "<li style='margin-bottom:10px;'><a href='/nombre/Ana' style='color:#3498db;'>Saludar a Ana</a></li>"
+                        + "<li style='margin-bottom:10px;'><a href='/nombre/Pepe' style='color:#3498db;'>Saludar a Pepe</a></li>"
+                        + "<li><a href='/nombre/Lucia' style='color:#3498db;'>Saludar a Lucia</a></li>"
+                        + "</ul>";
             }
             
             // 3) Datos del cliente
@@ -110,16 +124,16 @@ public class HiloPorClienteServidor implements Runnable {
             String body = "<html>"
                     + "<head>"
                     + "<link rel='icon' href='/favicon.ico'>"
-                    + "<title>Programación de Servicios y Procesos</title>"
+                    + "<title>PSP - Práctica 4</title>"
                     + "</head>"
-                    + "<body style='background-color: coral;'>"
-                    + "<h3 style='color:blue;'>Servidor OK</h3>"
-                    + "<p>Path: " + path + "</p>"
-                    + "<p>Server: " + fecha + "</p>"
-                    + "<p>Hilo: " + Thread.currentThread().getName() + "</p>"
-                    + "<p>Cliente IP: " + clientIp + "</p>"
-                    + "<p>Cliente puerto: " + clientPort + "</p>"
-                    + "<p>Remote: " + remote + "</p>"
+                    + "<body style='background-color: coral; font-family: sans-serif; padding: 20px;'>"
+                    + "<h1 style='color:blue;'>" + mensajeSaludo + "</h1>" // Muestra el saludo dinámico
+                    + "<div>" + contenidoExtra + "</div>"               // Muestra los enlaces o el texto extra
+                    + "<hr>"
+                    + "<p><b>Path actual:</b> " + path + "</p>"
+                    + "<p><b>Hilo asignado:</b> " + Thread.currentThread().getName() + "</p>"
+                    + "<p><b>IP Cliente:</b> " + clientIp + "</p>"
+                    + "<p><b>Fecha Server:</b> " + fecha + "</p>"
                     + "</body></html>";
 
             byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
