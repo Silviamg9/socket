@@ -92,6 +92,13 @@ public class HiloPorClienteServidor implements Runnable {
                 return;
             }
 
+            // --- MEJORA 1: Lógica para ruta dinámica ---
+            String mensajeSaludo = "Bienvenido al Servidor";
+            if (path.startsWith("/nombre/")) {
+                // Extraemos el texto que viene después de /nombre/
+                mensajeSaludo = "Hola " + path.substring(8); 
+            }
+            
             // 3) Datos del cliente
             String clientIp = clientSocket.getInetAddress().getHostAddress();
             int clientPort = clientSocket.getPort(); // puerto remoto del cliente
