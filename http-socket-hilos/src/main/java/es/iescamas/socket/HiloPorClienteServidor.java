@@ -92,25 +92,30 @@ public class HiloPorClienteServidor implements Runnable {
                 return;
             }
 
-            // --- LÓGICA DE MEJORAS 1 Y 2 ---
-            String mensajeSaludo = "Panel de Control del Servidor";
+         // --- LÓGICA DE RUTAS (MEJORAS 1, 2 Y 3) ---
+            String mensajeSaludo = "";
             String contenidoExtra = "";
+            String statusLine = "HTTP/1.1 200 OK"; // Por defecto todo va bien
 
-            if (path.startsWith("/nombre/")) {
+            if (path.equals("/")) {
+                // Mejora 2: Inicio
+                mensajeSaludo = "Bienvenido al Servidor Concurrente";
+                contenidoExtra = "<h3>Enlaces de prueba:</h3>"
+                        + "<ul>"
+                        + "<li><a href='/nombre/Ana' style='color:#3498db;'>Saludar a Ana</a></li>"
+                        + "<li><a href='/nombre/Pepe' style='color:#3498db;'>Saludar a Pepe</a></li>"
+                        + "</ul>";
+            } else if (path.startsWith("/nombre/")) {
                 // Mejora 1: Ruta dinámica
                 mensajeSaludo = "Hola " + path.substring(8);
-                contenidoExtra = "<p style='font-size: 1.2em;'>Has accedido a través de una ruta dinámica.</p>"
-                               + "<a href='/' style='color:#3498db; text-decoration:none;'>← Volver al inicio</a>";
-            } else if (path.equals("/")) {
-                // Mejora 2: Página de inicio con navegación (Mejora libre)
-                mensajeSaludo = "Bienvenido al Servidor Concurrente";
-                contenidoExtra = "<h3>Pruebas de Concurrencia Real:</h3>"
-                        + "<p>Haz clic en estos enlaces para abrir hilos distintos:</p>"
-                        + "<ul style='list-style: none; padding: 0;'>"
-                        + "<li style='margin-bottom:10px;'><a href='/nombre/Ana' style='color:#3498db;'>Saludar a Ana</a></li>"
-                        + "<li style='margin-bottom:10px;'><a href='/nombre/Pepe' style='color:#3498db;'>Saludar a Pepe</a></li>"
-                        + "<li><a href='/nombre/Lucia' style='color:#3498db;'>Saludar a Lucia</a></li>"
-                        + "</ul>";
+                contenidoExtra = "<p>Has accedido a una ruta dinámica.</p><a href='/' style='color:#3498db;'>← Volver</a>";
+            } else {
+                // MEJORA 3: Manejo de Error 404 (Mejora libre)
+                statusLine = "HTTP/1.1 404 Not Found";
+                mensajeSaludo = "Error 404 - No encontrado";
+                contenidoExtra = "<p style='color:#e74c3c;'>Lo sentimos, la ruta <b>" + path + "</b> no existe en este servidor.</p>"
+                               + "<a href='/' style='color:#3498db;'>← Volver al inicio seguro</a>";
+                System.out.println("[ERROR 404] Ruta no encontrada: " + path);
             }
             
             // 3) Datos del cliente
@@ -122,19 +127,15 @@ public class HiloPorClienteServidor implements Runnable {
             String fecha = new SimpleDateFormat("dd/MM/yy HH:mm:ss").format(new Date(time));
 
             String body = "<html>"
-                    + "<head>"
-                    + "<link rel='icon' href='/favicon.ico'>"
-                    + "<title>PSP - Práctica 4</title>"
-                    + "</head>"
-                    + "<body style='background-color: coral; font-family: sans-serif; padding: 20px;'>"
-                    + "<h1 style='color:blue;'>" + mensajeSaludo + "</h1>" // Muestra el saludo dinámico
-                    + "<div>" + contenidoExtra + "</div>"               // Muestra los enlaces o el texto extra
-                    + "<hr>"
-                    + "<p><b>Path actual:</b> " + path + "</p>"
-                    + "<p><b>Hilo asignado:</b> " + Thread.currentThread().getName() + "</p>"
-                    + "<p><b>IP Cliente:</b> " + clientIp + "</p>"
-                    + "<p><b>Fecha Server:</b> " + fecha + "</p>"
-                    + "</body></html>";
+                    + "<head><title>PSP - Práctica 4</title></head>"
+                    + "<body style='background-color: #2c3e50; color: #ecf0f1; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;'>"
+                    + "<div style='background-color: #34495e; padding: 40px; border-radius: 15px; border-left: 10px solid #3498db; width: 500px;'>"
+                    + "<h1 style='color:#3498db;'>" + mensajeSaludo + "</h1>"
+                    + contenidoExtra
+                    + "<hr style='border: 0; border-top: 1px solid #7f8c8d; margin: 20px 0;'>"
+                    + "<p><b>Hilo:</b> " + Thread.currentThread().getName() + "</p>"
+                    + "<p><b>Tu IP:</b> " + clientIp + "</p>"
+                    + "</div></body></html>";
 
             byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
 
