@@ -12,8 +12,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Servidor TCP que atiende clientes mediante un hilo por conexión.
- * Sirve HTML básico y un favicon desde src/main/resources/favicon.ico
+ * Servidor HTTP concurrente que gestiona peticiones mediante hilos independientes.
+ * <pre>
+ * http://localhost:9001/nombre/Ana
+ * </pre>
+ * @author Silvia Mª Moreno García
+ * @version 1.0
+ * @since 2026-02-04
  */
 public class HiloPorClienteServidor implements Runnable {
 
@@ -28,6 +33,11 @@ public class HiloPorClienteServidor implements Runnable {
 
     /** Referencia al hilo que ejecuta run(). */
     protected Thread runningThread = null;
+    
+    /**
+     * Constructor del servidor.
+     * @param serverPort Puerto en el que el servidor aceptará conexiones.
+     */
 
     public HiloPorClienteServidor(int serverPort) {
         this.serverPort = serverPort;
@@ -67,6 +77,9 @@ public class HiloPorClienteServidor implements Runnable {
 
     /**
      * Procesa la conexión de un cliente.
+     * @param clientSocket Socket del cliente que ha iniciado la conexión.
+     * @throws IOException Si ocurre un error en la comunicación por socket.
+     * @apiNote Soporta rutas dinámicas como /nombre/Ana y gestiona errores 404.
      */
     private void processClientRequest(Socket clientSocket) throws IOException {
         try (clientSocket;
@@ -159,7 +172,9 @@ public class HiloPorClienteServidor implements Runnable {
     }
 
     /**
-     * Sirve el favicon real desde el classpath: src/main/resources/favicon.ico
+     * Sirve el icono de la web (favicon) desde los recursos del proyecto.
+     * @param out Stream de salida para enviar los bytes de la imagen.
+     * @throws IOException Si falla el envío de datos.
      */
     private void serveFavicon(OutputStream out) throws IOException {
         try (InputStream iconStream = HiloPorClienteServidor.class.getResourceAsStream("/favicon.ico")) {
@@ -185,6 +200,11 @@ public class HiloPorClienteServidor implements Runnable {
             out.flush();
         }
     }
+    
+    /**
+     * Comprueba el estado de detención del servidor.
+     * @return true si el servidor está detenido, false en caso contrario.
+     */
 
     private synchronized boolean isStopped() {
         return isStopped;
@@ -198,6 +218,9 @@ public class HiloPorClienteServidor implements Runnable {
         }
     }
 
+    /**
+     * Detiene el servidor y cierra el socket principal.
+     */
     public synchronized void stop() {
         this.isStopped = true;
         try {
